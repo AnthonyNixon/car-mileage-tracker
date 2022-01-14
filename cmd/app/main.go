@@ -1,9 +1,10 @@
 package main
 
 import (
-	"AnthonyNixon/car-mileage-tracker/cmd/handlers/events"
+	"AnthonyNixon/car-mileage-tracker/cmd/handlers/fillups"
 	"AnthonyNixon/car-mileage-tracker/cmd/handlers/up"
 	"AnthonyNixon/car-mileage-tracker/cmd/services/router"
+	"AnthonyNixon/car-mileage-tracker/cmd/services/storage"
 	"flag"
 	"fmt"
 	"log"
@@ -17,6 +18,8 @@ func init() {
 	if PORT == "" {
 		PORT = "8080"
 	}
+
+	storage.Initialize()
 }
 
 func main() {
@@ -26,7 +29,7 @@ func main() {
 	router := router.New(*releaseModePtr)
 
 	up.AddUpV1(router)
-	events.AddEventsV1(router)
+	fillups.AddFillupsV1(router)
 
 	log.Printf("Running car-mileage-tracker API on :%s...", PORT)
 	err := router.Run(fmt.Sprintf(":%s", PORT))
