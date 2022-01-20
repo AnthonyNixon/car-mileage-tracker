@@ -18,7 +18,7 @@ func (totalData TotalData) Print() {
 func (totalData *TotalData) AddValues(miles int, gallons float64, cost float64) {
 	totalData.Miles += miles
 	totalData.Gallons += gallons
-	totalData.MilesPerGallon = float64(miles) / gallons
+	totalData.MilesPerGallon = float64(totalData.Miles) / totalData.Gallons
 
 	totalData.Cost += cost
 }

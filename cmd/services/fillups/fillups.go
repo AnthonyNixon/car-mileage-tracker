@@ -1,10 +1,13 @@
 package fillups
 
 import (
+	"AnthonyNixon/car-mileage-tracker/cmd/models/events"
 	"AnthonyNixon/car-mileage-tracker/cmd/services/storage"
 	"AnthonyNixon/car-mileage-tracker/cmd/utls/httperr"
+	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"time"
 )
 
@@ -23,6 +26,22 @@ type FillUp struct {
 func (fillup FillUp) print() {
 	fmt.Printf("FillUp:\n\tcar_id:\t\t%s\n\tid:\t\t%d\n\tOdometer:\t%d\n\tGallons:\t%f\n\t$/gallon:\t%f\n\tCost:\t\t%f\n\tmpg:\t\t%f\n\tStation:\t%s\n\tTimestamp:\t%v\n",
 		fillup.CarId, fillup.Id, fillup.Odometer, fillup.Gallons, fillup.PricePerGallon, fillup.TotalCost, fillup.MilesPerGallon, fillup.GasStation, fillup.Timestamp)
+}
+
+func (fillup FillUp) Save() (error httperr.HttpErr) {
+	fileName := fmt.Sprintf("%s/fillup/%d.json", fillup.CarId, fillup.Id)
+
+	content, err := json.Marshal(fillup)
+	if err != nil {
+		return httperr.New(http.StatusInternalServerError, "Failed to marshal json", err.Error())
+	}
+
+	error = storage.SaveFile(content, fileName)
+	if error != nil {
+		return
+	}
+
+	return nil
 }
 
 func NewFillup(fillup FillUp) (error httperr.HttpErr) {
@@ -46,6 +65,31 @@ func NewFillup(fillup FillUp) (error httperr.HttpErr) {
 	fillup.print()
 
 	data.Total.AddValues(milesDriven, fillup.Gallons, fillup.TotalCost)
+	event := events.Event{
+		Id:        fillup.Id,
+		Type:      "fillup",
+		Timestamp: fillup.Timestamp,
+		Odometer:  fillup.Odometer,
+	}
+
+	data.Last.Id = fillup.Id
+	data.Last.Odometer = fillup.Odometer
+	data.Last.MilesPerGallon = fillup.MilesPerGallon
+	data.Last.FillUpId = fillup.Id
+	data.Last.Timestamp = fillup.Timestamp
+
+	data.Events = append(data.Events, event)
+	fmt.Printf("%v", data)
+
+	error = fillup.Save()
+	if error != nil {
+		return
+	}
+
+	error = storage.SaveStorageFile(data)
+	if error != nil {
+		return
+	}
 
 	return nil
 }

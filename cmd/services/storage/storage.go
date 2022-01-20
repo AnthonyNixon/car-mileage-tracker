@@ -80,3 +80,18 @@ func GetStorageFileByID(id string) (storageFile storage_file.StorageFile, return
 
 	return
 }
+
+func SaveFile(content []byte, filename string) (returnErr httperr.HttpErr) {
+	wc := bucket.Object(filename).NewWriter(ctx)
+	wc.ContentType = "application/json"
+
+	if _, err := wc.Write(content); err != nil {
+		return httperr.New(http.StatusInternalServerError, "failed to write content", err.Error())
+	}
+
+	if err := wc.Close(); err != nil {
+		return httperr.New(http.StatusInternalServerError, "failed to close writer", err.Error())
+	}
+
+	return nil
+}
